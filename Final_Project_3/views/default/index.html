@@ -1,0 +1,275 @@
+{{extend 'layout.html'}}
+{{block head}}
+<script src="{{=URL('static', 'js/vue.js')}}"></script>
+<script>
+    var images_url = "{{=URL('default', 'get_images')}}";
+    var get_posts_url = "{{=URL('api', 'get_posts')}}";
+    var add_post_url = "{{=URL('api', 'add_post', user_signature=True)}}";
+    var del_post_url = "{{=URL('api', 'del_post', user_signature=True)}}";
+    //Eddie's Code
+    var tracks_url = "{{=URL('api', 'get_tracks')}}";
+    var add_track_url = "{{=URL('api', 'add_track', user_signature=True)}}";
+    var del_track_url = "{{=URL('api', 'del_track', user_signature=True)}}";
+    var current_user = "{{=auth.user.email if auth.user_id else None}}"
+</script>
+{{end}}
+
+<html>
+<head>
+<title>San Francisco Higos</title>
+</head>
+<body>
+<div id="vue-div" style="display:none">
+
+    <!--Displays Menu Bar -->
+    <ul class="topnav" id="myTopnav">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="#news">News</a></li>
+        <li><a href="#videos">Videos</a></li>
+        <li><a v-on:click="toggle_picture_button()">Pictures</a></li>
+        <li><a v-on:click="toggle_events_button()">Events</a></li>
+        <li class="icon">
+            <a href="javascript:void(0);" onclick="myFunction()">&#9776;</a>
+        </li>
+    </ul>
+    <!--Displays Main Heading -->
+    <div v-if="!is_clicking_picture && !is_clicking_events ">
+        <h1 align = "center">Group1</h1>
+        <p align = "center">Under construction</p>
+    </div>
+
+
+    <!-- When Picture is Clicked-->
+     <div v-if="is_clicking_picture">
+         <!--Button(+Add Picture) -->
+         <div id = "Add_Picture_Header" class="text-center">
+            <a v-if="is_clicking_picture" href="{{=URL('default','upload_image')}}" v-on:click="toggle_adding_picture_button()"
+             class="btn btn-warning">
+                <i class="fa fa-plus">Add Picture</i>
+            </a>
+         </div>
+         <!--List of images-->
+         <div v-for="product of products" class="container">
+
+             <!-- this displays the actual Image and its Size-->
+             <div class="third prod_image">
+                    <img v-bind:src="product.image_url" width="20%" class="product_image"/>
+                </div>
+
+             <!-- This displays the Descriptions..This Works!!-->
+             <div class="twothirds product_info">
+                 <div class="product_description">
+                     <p>${product.description}</p>
+                 </div>
+             </div>
+
+             <!--Header to post Comments-->
+             <div id="add_post_header">
+                 <!--First(Comment/Cancel)Buttons-->
+                 <div class="button_bar">
+                     <button v-if="!is_adding_post" class="btn btn-warning btn-m" v-on:click="toggle_post_button()" v-bind:class="{'disabled': !user_id}">
+                         Comment
+                     </button>
+                     <button v-if="is_adding_post" class="btn btn-warning btn-sm" v-on:click="toggle_post_button()">
+                         Cancel
+                     </button>
+                 </div>
+                 <!--Displaying the form to add a Comment, plus input button"Submit"-->
+                 <div v-if="is_adding_post" id="add_post_div">
+                     <form action="#" v-on:submit.prevent="add_post" class="form-horizontal" enctype="multipart/form-data" method="post">
+                         <div class="form-group" id="content_row">
+                             <div>
+                                 <textarea class="form-control string" id="content" v-model="form_content" placeholder="Your post content" type="text"></textarea>
+                                 <span class="help-block"></span>
+                             </div>
+                         </div>
+                         <div class="form-group" id="submit_post_row">
+                             <div>
+                                 <input class="btn btn-primary" id="add_post_submit" type="submit" value="Submit" />
+                             </div>
+                         </div>
+                     </form>
+                 </div>
+             </div>
+
+             <!-- Edit Fucntions!!-->
+             <div v-for="post of posts">
+                 <div class="post text-left">
+                     <!--When Post is Under Edit, Displays Deletes, Cancel, and text area with input-->
+                     <div v-if="post_under_edit && post.id == post_being_edited">
+                         <form action="#" v-on:submit.prevent="add_post" class="form-horizontal" enctype="multipart/form-data" method="post">
+                             <div class="form-group" id="content_row">
+                                 <div>
+                                     <textarea class="form-control string" id="content" v-model="form_content" placeholder="Your post content" type="text"></textarea>
+                                     <span class="help-block"></span>
+                                 </div>
+                             </div>
+                             <div class="form-group" id="submit_post_row">
+                                 <div>
+                                     <input class="btn btn-primary btn-sm" id="add_post_submit" type="submit" value="Submit" />
+                                 </div>
+                             </div>
+
+                             <button v-if="post_under_edit && post_being_edited == post.id" class="btn btn-warning btn-sm" v-on:click.prevent="toggle_post_under_edit(0)">
+                                 Cancel
+                             </button>
+
+                             <button v-if="post_under_edit && post_being_edited == post.id" class="btn btn-danger btn-sm" v-on:click.prevent="delete_post(post.id)">
+                                 Delete
+                             </button>
+                         </form>
+                     </div>
+
+                     <div v-if="post_being_edited != post.id">
+                         ${post.post_content}
+                     </div>
+                     <!--Author's info-->
+                     <div class="post-info">
+                         <div id="author">${post.author}</div>
+                         <div id="date-created">${post.created_on}</div>
+                         <div v-if="post.created_on != post.edited_on">
+                             <div id="date-updated">Edited on ${post.updated_on}</div>
+                         </div>
+
+                         <button v-if="post.belongs_to_user && post_being_edited != post.id" class="btn btn-warning btn-sm" v-on:click="toggle_post_under_edit(post.id)">
+                             <span class="glyphicon glyphicon-edit"></span>
+                         </button>
+                     </div>
+                 </div>
+             </div>
+
+             <!-- Load More button....This works!!-->
+             <div id="has_more_bottom">
+                 <div v-if="has_more" class=show_more">
+                     <button class="btn btn-default" v-on:click="get_more()">Load More</button>
+                 </div>
+             </div>
+         </div>
+
+
+
+     </div>
+
+
+
+
+
+
+<!-- Eddie's Events Page -->
+    <div v-if="is_clicking_events">
+        <div class="main_content">
+
+    <h2>Events</h2>
+    <div id="vue-div" class="display:none">
+        <div class="button_bar">
+            <button v-if="!is_adding_track" class="btn btn-danger btn-sm" v-on:click="add_track_button()" v-bind:class="{'disabled': !logged_in}">
+            {{=icon_add}}Add Event
+            </button>
+
+            <button v-if="is_adding_track" class="btn btn-warning btn-sm" v-on:click="add_track_button()">
+            {{=icon_cancel}}Cancel
+            </button>
+        </div>
+
+        <div v-if="is_adding_track" id="add_track_div">
+            <form action="#" v-on:submit.prevent="add_track" class="form-horizontal" enctype="multipart/form-data" method="post">
+                <div class="form-group" id="no_table_artist__row">
+                    <div>
+                        <input class="form-control string" id="no_table_artist" v-model="form_artist" placeholder="Event Name" type="text" />
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+                <div class="form-group" id="no_table_album__row">
+                    <div>
+                        <textarea class="form-control string" id="no_table_album" name="Description" type="text" v-model="form_album" placeholder="Description"> </textarea>
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+                <div class="form-group" id="no_table_track__row">
+                    <div><input class="form-control string" id="no_table_track" name="Location" type="text" v-model="form_track" placeholder="Location"/>
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+                <div class="form-group" id="no_table_duration__row">
+                    <div><input class="form-control string" id="no_table_duration" name="Time" type="text" v-model="form_duration" placeholder="Time" />
+                        <span class="help-block"></span>
+                    </div>
+                </div>
+                <div class="form-group" id="submit_record__row">
+                    <div>
+                        <input class="btn btn-primary" id="add_track_submit" type="submit" value="Submit" />
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="result_table">
+            <table>
+                <thead>
+                <tr>
+                    <th>Created By</th>
+                    <th>Event</th>
+                    <th>Description</th>
+                    <th>Location</th>
+                    <th>Time</th>
+                    <th>Delete</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="track in tracks">
+                    <td>${track.created_by}</td>
+                    <td>${track.artist}</td>
+                    <td>${track.album}</td>
+                    <td>${track.title}</td>
+                    <td>${track.duration}</td>
+                    <td><i class="fa fa-trash-o" v-on:click="delete_track(track.id)"></i></td>
+                </tr>
+                </tbody>
+            </table>
+            <div v-if="has_more" class="show_more">
+                <button class="btn btn-default" v-on:click="get_more()">Load more</button></div>
+        </div>
+    </div>
+
+
+</div>
+
+
+
+
+
+
+
+    <a id="reflectedlink" href="https://www.google.com/maps" target="_blank">Directions</a>
+    <input id="searchterm"/>
+    <script type="text/javascript">
+        var link= document.getElementById('reflectedlink');
+        var input= document.getElementById('searchterm');
+                    input.onchange=input.onkeyup= function() {
+                    link.search= '?q='+encodeURIComponent(input.value);
+                    };
+    </script>
+
+
+    </div>
+<!-- Eddie Finish -->
+
+
+</div>
+</body>
+</html>
+<script src="{{=URL('static', 'js/default_index.js')}}"></script>
+
+
+
+
+
+<!-- Eddie's Code -->
+
+<!-- End Eddie -->
+
+
+
+
+
+

@@ -1,0 +1,42 @@
+{{extend 'layout.html'}}
+{{block head}}
+<script src="{{=URL('static', 'js/vue.js')}}"></script>
+<script>
+    var products_url = "{{=URL('default', 'get_products')}}";
+    var get_posts_url = "{{=URL('api', 'get_posts')}}";
+    var add_post_url = "{{=URL('api', 'add_post', user_signature=True)}}";
+    var del_post_url = "{{=URL('api', 'del_post', user_signature=True)}}";
+</script>
+{{end}}
+
+<html>
+<head>
+<title>San Francisco Higos</title>
+</head>
+<body>
+
+ <ul class="topnav" id="myTopnav">
+  <li><a href="index.html">Home</a></li>
+  <li><a href="#news">News</a></li>
+  <li><a href="#videos">Videos</a></li>
+  <li><a href="pictures.html">Pictures</a></li>
+  <li><a href="#about">About</a></li>
+  <li class="icon">
+    <a href="javascript:void(0);" onclick="myFunction()">&#9776;</a>
+  </li>
+</ul>
+
+
+<body>
+<!-- Background-->
+<!--Main Heading -->
+<h1 align = "center">Pictures</h1>
+</body>
+
+
+
+
+
+</body>
+</html>
+<script src="{{=URL('static', 'js/default_index.js')}}"></script>
